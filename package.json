@@ -1,0 +1,25 @@
+{
+  "name": "insightform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.22.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @insightform/api --filter @insightform/web dev",
+    "dev:api": "pnpm --filter @insightform/api dev",
+    "dev:web": "pnpm --filter @insightform/web dev",
+    "dev:worker": "pnpm --filter @insightform/api worker:dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "eslint": "^9.29.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.34.1"
+  }
+}
