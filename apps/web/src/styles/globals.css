@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 42 33% 97%;
+  --foreground: 222 24% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 24% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 24% 14%;
+  --primary: 222 45% 24%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 152 20% 88%;
+  --secondary-foreground: 165 32% 21%;
+  --muted: 42 22% 91%;
+  --muted-foreground: 224 10% 40%;
+  --accent: 174 42% 40%;
+  --accent-foreground: 180 34% 18%;
+  --border: 38 17% 84%;
+  --input: 38 17% 84%;
+  --ring: 174 42% 40%;
+  --destructive: 0 72% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 151 45% 39%;
+  --success-foreground: 151 45% 18%;
+  --warning: 37 87% 56%;
+  --warning-foreground: 35 65% 21%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: hsl(var(--accent) / 0.18);
+}
