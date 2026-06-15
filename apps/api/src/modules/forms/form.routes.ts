@@ -5,9 +5,10 @@ import { asyncHandler } from "../../shared/http/async-handler.js";
 import { parseBody, parseParams } from "../../shared/http/parse-request.js";
 import { created, noContent, ok } from "../../shared/http/response.js";
 import { getRequiredUserId } from "../auth/request-auth-context.js";
+import { FormPublicationModule } from "../form-publication/form-publication.module.js";
 import { requireCurrentUser } from "../users/require-current-user.middleware.js";
 import { mapFormCard, mapFormDetail } from "./form.mapper.js";
-import { FormRepository } from "./form.repository.js";
+import { FormModule } from "./form.module.js";
 import {
   addQuestionBodySchema,
   addSectionBodySchema,
@@ -23,7 +24,13 @@ import {
   updateSectionBodySchema,
 } from "./form.schemas.js";
 
-function mapSection(section: { id: string; formId: string; title: string; description: string | null; position: number }) {
+function mapSection(section: {
+  id: string;
+  formId: string;
+  title: string;
+  description: string | null;
+  position: number;
+}) {
   return {
     id: section.id,
     formId: section.formId,
@@ -57,7 +64,8 @@ function mapQuestion(question: {
 
 export function createFormRouter() {
   const router = Router();
-  const forms = new FormRepository();
+  const forms = new FormModule();
+  const publication = new FormPublicationModule();
 
   router.use(...requireCurrentUser);
 
@@ -116,8 +124,8 @@ export function createFormRouter() {
     asyncHandler(async (request, response) => {
       const userId = getRequiredUserId(request);
       const { formId } = parseParams(request, formIdParamsSchema);
-      const draft = parseBody(request, updateDraftBodySchema);
-      const form = await forms.replaceDraft(formId, userId, draft);
+      const { draft, expectedDraftVersion } = parseBody(request, updateDraftBodySchema);
+      const form = await forms.replaceDraft(formId, userId, draft, expectedDraftVersion);
       ok(response, mapFormDetail(form));
     }),
   );
@@ -223,7 +231,7 @@ export function createFormRouter() {
     asyncHandler(async (request, response) => {
       const userId = getRequiredUserId(request);
       const { formId } = parseParams(request, formIdParamsSchema);
-      const result = await forms.publish(formId, userId);
+      const result = await publication.publish(formId, userId);
       ok(response, {
         formId: result.formId,
         status: result.status,
@@ -240,7 +248,7 @@ export function createFormRouter() {
     asyncHandler(async (request, response) => {
       const userId = getRequiredUserId(request);
       const { formId } = parseParams(request, formIdParamsSchema);
-      const form = await forms.close(formId, userId);
+      const form = await publication.close(formId, userId);
       ok(response, mapFormCard(form));
     }),
   );

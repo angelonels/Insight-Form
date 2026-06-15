@@ -3,12 +3,16 @@ import { Router } from "express";
 import { asyncHandler } from "../../shared/http/async-handler.js";
 import { parseBody, parseParams } from "../../shared/http/parse-request.js";
 import { noContent, ok } from "../../shared/http/response.js";
-import { PublishedFormRepository } from "./published-form.repository.js";
-import { publicEventBodySchema, publicSlugParamsSchema, submitPublicResponseBodySchema } from "./public-form.schemas.js";
+import { PublicFormModule } from "./public-form.module.js";
+import {
+  publicEventBodySchema,
+  publicSlugParamsSchema,
+  submitPublicResponseBodySchema,
+} from "./public-form.schemas.js";
 
 export function createPublicFormRouter() {
   const router = Router();
-  const publicForms = new PublishedFormRepository();
+  const publicForms = new PublicFormModule();
 
   router.get(
     "/:publicSlug",
