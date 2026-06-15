@@ -2,6 +2,16 @@ import "dotenv/config";
 
 import { z } from "zod";
 
+const booleanEnv = z.preprocess((value) => {
+  if (value === "true") {
+    return true;
+  }
+  if (value === "false") {
+    return false;
+  }
+  return value;
+}, z.boolean());
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
@@ -28,6 +38,7 @@ const envSchema = z.object({
   CORS_ALLOWED_ORIGINS: z.string().default("http://localhost:5173"),
   PUBLIC_APP_URL: z.string().url().default("http://localhost:5173"),
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal", "silent"]).default("info"),
+  ENABLE_TEST_AUTH: booleanEnv.default(false),
 });
 
 const parsedEnv = envSchema.parse(process.env);
