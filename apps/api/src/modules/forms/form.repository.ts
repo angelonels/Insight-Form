@@ -2,6 +2,7 @@ import { and, count, desc, eq, inArray, max, sql } from "drizzle-orm";
 
 import { db, type Database } from "../../shared/database/db.js";
 import {
+  formEvents,
   formQuestions,
   formResponses,
   forms,
@@ -63,11 +64,18 @@ export class FormRepository {
           .select({ count: count(), lastResponseAt: max(formResponses.submittedAt) })
           .from(formResponses)
           .where(eq(formResponses.formId, row.id));
+        const [openedCountRow] = await this.database
+          .select({ count: count() })
+          .from(formEvents)
+          .where(and(eq(formEvents.formId, row.id), eq(formEvents.eventType, "form_opened")));
+
+        const responseCount = responseCountRow?.count ?? 0;
+        const openedCount = openedCountRow?.count ?? 0;
 
         return {
           ...mapForm(row),
-          responseCount: responseCountRow?.count ?? 0,
-          completionRate: null,
+          responseCount,
+          completionRate: openedCount > 0 ? responseCount / openedCount : null,
           lastResponseAt: responseCountRow?.lastResponseAt ?? null,
         };
       }),

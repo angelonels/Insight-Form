@@ -23,7 +23,10 @@ export const updateFormMetadataBodySchema = createFormBodySchema.partial().refin
   message: "At least one field is required.",
 });
 
-export const updateDraftBodySchema = editableFormDraftSchema;
+export const updateDraftBodySchema = z.object({
+  expectedDraftVersion: z.number().int().min(1),
+  draft: editableFormDraftSchema,
+});
 
 export const addSectionBodySchema = editableSectionSchema.omit({ id: true, questions: true }).partial({
   position: true,
