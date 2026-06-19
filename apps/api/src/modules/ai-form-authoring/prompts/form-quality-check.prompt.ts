@@ -1,8 +1,14 @@
+import { buildStructuredTaskPrompt } from "../../ai/structured-task-prompt.js";
+
 export function buildFormQualityCheckPrompt(input: { formContext: unknown }) {
-  return `Review this form for quality, bias, structure, respondent burden, and clarity.
-
-Form:
-${JSON.stringify(input.formContext, null, 2)}
-
-Return a score from 0 to 100, a short summary, and concrete issues. Mark isSafeAutoFix true only when the suggested fix changes one question without changing answer semantics.`;
+  return buildStructuredTaskPrompt({
+    task: "Review this form for quality, bias, structure, respondent burden, and clarity.",
+    context: [{ label: "Form", value: input.formContext }],
+    rules: [
+      "Do not invent issues just to fill the list.",
+      "Prefer actionable wording fixes over vague criticism.",
+      "Keep copy respondent-friendly and non-technical.",
+      "Mark isSafeAutoFix true only when a small question patch preserves answer semantics.",
+    ],
+  });
 }

@@ -1,9 +1,9 @@
-import { FormRepository } from "../forms/form.repository.js";
+import { FormModule } from "../forms/form.module.js";
 import { FormQualityCheckRepository } from "./form-quality-check.repository.js";
 
 export class ApplyQualityFixUseCase {
   constructor(
-    private readonly forms = new FormRepository(),
+    private readonly forms = new FormModule(),
     private readonly qualityChecks = new FormQualityCheckRepository(),
   ) {}
 

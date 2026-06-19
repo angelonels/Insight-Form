@@ -13,9 +13,11 @@ export class GenerateFormDraftWithAiUseCase {
 
   async execute(input: { userId: string; prompt: string; guidedOptions: Record<string, unknown> }) {
     const generatedSchema = await this.ai.generateStructuredOutput({
-      system: "You are a senior survey designer for InsightForm. Produce neutral, useful, respondent-friendly forms.",
+      system:
+        "You are a senior survey designer for InsightForm. Produce neutral, useful, respondent-friendly forms.",
       prompt: buildGenerateFormDraftPrompt(input),
       schema: generatedFormDraftOutputSchema,
+      schemaName: "generated_form_draft",
       modelProfile: "large",
     });
 
