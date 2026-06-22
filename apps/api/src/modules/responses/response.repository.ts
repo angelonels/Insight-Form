@@ -1,15 +1,24 @@
 import { and, desc, eq } from "drizzle-orm";
 
 import { db, type Database } from "../../shared/database/db.js";
-import { formResponses, forms, responseAnalyses, responseAnswers } from "../../shared/database/schema/index.js";
-import { ForbiddenError, NotFoundError } from "../../shared/errors/app-error.js";
+import {
+  formResponses,
+  responseAnalyses,
+  responseAnswers,
+} from "../../shared/database/schema/index.js";
+import { NotFoundError } from "../../shared/errors/app-error.js";
+import { FormOwnership } from "../forms/form-ownership.js";
 import { enqueueAnalyzeSubmittedResponse } from "../jobs/enqueue-response-analysis.js";
 
 export class ResponseRepository {
-  constructor(private readonly database: Database = db) {}
+  private readonly ownership: FormOwnership;
+
+  constructor(private readonly database: Database = db) {
+    this.ownership = new FormOwnership(database);
+  }
 
   async listForForm(formId: string, ownerUserId: string) {
-    await this.ensureFormOwner(formId, ownerUserId);
+    await this.ownership.requireOwner(formId, ownerUserId);
 
     const rows = await this.database
       .select({
@@ -34,7 +43,7 @@ export class ResponseRepository {
   }
 
   async getDetail(formId: string, ownerUserId: string, responseId: string) {
-    await this.ensureFormOwner(formId, ownerUserId);
+    await this.ownership.requireOwner(formId, ownerUserId);
 
     const [response] = await this.database
       .select()
@@ -49,8 +58,15 @@ export class ResponseRepository {
       });
     }
 
-    const answers = await this.database.select().from(responseAnswers).where(eq(responseAnswers.responseId, responseId));
-    const [analysis] = await this.database.select().from(responseAnalyses).where(eq(responseAnalyses.responseId, responseId)).limit(1);
+    const answers = await this.database
+      .select()
+      .from(responseAnswers)
+      .where(eq(responseAnswers.responseId, responseId));
+    const [analysis] = await this.database
+      .select()
+      .from(responseAnalyses)
+      .where(eq(responseAnalyses.responseId, responseId))
+      .limit(1);
 
     return {
       id: response.id,
@@ -92,23 +108,5 @@ export class ResponseRepository {
       responseId,
       status: "queued" as const,
     };
-  }
-
-  private async ensureFormOwner(formId: string, ownerUserId: string) {
-    const [form] = await this.database.select({ id: forms.id, ownerUserId: forms.ownerUserId }).from(forms).where(eq(forms.id, formId)).limit(1);
-
-    if (!form) {
-      throw new NotFoundError({
-        code: "FORM_NOT_FOUND",
-        message: "Form not found.",
-      });
-    }
-
-    if (form.ownerUserId !== ownerUserId) {
-      throw new ForbiddenError({
-        code: "FORM_ACCESS_DENIED",
-        message: "You do not have access to this form.",
-      });
-    }
   }
 }

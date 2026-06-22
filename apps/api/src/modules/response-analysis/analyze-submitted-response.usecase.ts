@@ -18,6 +18,7 @@ export class AnalyzeSubmittedResponseUseCase {
       system: "You analyze survey responses for InsightForm. Stay grounded in submitted answers.",
       prompt: buildSummarizeResponsePrompt({ answers }),
       schema: responseAnalysisOutputSchema,
+      schemaName: "response_analysis",
       modelProfile: "small",
     });
 
