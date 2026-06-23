@@ -4,6 +4,7 @@ import { Worker } from "bullmq";
 
 import { logger } from "../../shared/logger/logger.js";
 import { GenerateInsightsJob } from "../insights/generate-insights.job.js";
+import { InsightRepository } from "../insights/insight.repository.js";
 import { GenerateReportJob } from "../reports/generate-report.job.js";
 import { AnalyzeSubmittedResponseUseCase } from "../response-analysis/analyze-submitted-response.usecase.js";
 import { GenerateResponseEmbeddingsUseCase } from "../response-analysis/generate-response-embeddings.usecase.js";
@@ -19,6 +20,7 @@ import { getRedisConnectionOptions } from "./queue.js";
 const analyzeSubmittedResponse = new AnalyzeSubmittedResponseUseCase();
 const generateResponseEmbeddings = new GenerateResponseEmbeddingsUseCase();
 const generateInsights = new GenerateInsightsJob();
+const insightStatuses = new InsightRepository();
 const generateReport = new GenerateReportJob();
 
 const workers = [
@@ -81,8 +83,18 @@ for (const worker of workers) {
     logger.info({ jobId: job.id, jobName: job.name, queueName: worker.name }, "Job completed");
   });
 
-  worker.on("failed", (job, error) => {
+  worker.on("failed", async (job, error) => {
     logger.error({ jobId: job?.id, jobName: job?.name, queueName: worker.name, error }, "Job failed");
+
+    const attempts = job?.opts.attempts ?? 1;
+    if (worker.name === QueueNames.Insights && job?.name === JobNames.GenerateInsightSnapshot && job.attemptsMade >= attempts) {
+      const payload = job.data as GenerateInsightSnapshotPayload;
+      try {
+        await insightStatuses.markFailed(payload.formId);
+      } catch (statusError) {
+        logger.error({ formId: payload.formId, error: statusError }, "Failed to mark insight generation as failed");
+      }
+    }
   });
 }
 

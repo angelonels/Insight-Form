@@ -10,35 +10,32 @@ import {
   responseAnswers,
   responseClusters,
 } from "../../shared/database/schema/index.js";
-import { ForbiddenError, NotFoundError } from "../../shared/errors/app-error.js";
+import { FormOwnership } from "../forms/form-ownership.js";
 
 export class InsightRepository {
-  constructor(private readonly database: Database = db) {}
+  private readonly ownership: FormOwnership;
 
-  async ensureFormOwner(formId: string, ownerUserId: string) {
-    const [form] = await this.database.select().from(forms).where(eq(forms.id, formId)).limit(1);
-
-    if (!form) {
-      throw new NotFoundError({ code: "FORM_NOT_FOUND", message: "Form not found." });
-    }
-
-    if (form.ownerUserId !== ownerUserId) {
-      throw new ForbiddenError({
-        code: "FORM_ACCESS_DENIED",
-        message: "You do not have access to this form.",
-      });
-    }
-
-    return form;
+  constructor(private readonly database: Database = db) {
+    this.ownership = new FormOwnership(database);
   }
 
   async markProcessing(formId: string, ownerUserId: string) {
-    await this.ensureFormOwner(formId, ownerUserId);
-    await this.database.update(forms).set({ insightStatus: "processing", updatedAt: new Date() }).where(eq(forms.id, formId));
+    await this.ownership.requireOwner(formId, ownerUserId);
+    await this.database
+      .update(forms)
+      .set({ insightStatus: "processing", updatedAt: new Date() })
+      .where(eq(forms.id, formId));
+  }
+
+  async markFailed(formId: string) {
+    await this.database
+      .update(forms)
+      .set({ insightStatus: "failed", updatedAt: new Date() })
+      .where(eq(forms.id, formId));
   }
 
   async latest(formId: string, ownerUserId: string) {
-    await this.ensureFormOwner(formId, ownerUserId);
+    const form = await this.ownership.requireOwner(formId, ownerUserId);
     const [snapshot] = await this.database
       .select()
       .from(insightSnapshots)
@@ -47,15 +44,39 @@ export class InsightRepository {
       .limit(1);
 
     if (!snapshot) {
+      if (form.insightStatus === "processing" || form.insightStatus === "failed") {
+        const metrics = await this.calculateDeterministicMetrics(formId);
+        return {
+          id: `${form.insightStatus}-${formId}`,
+          formId,
+          status: form.insightStatus,
+          totalResponses: metrics.totalResponses,
+          sentimentBreakdown: metrics.sentimentBreakdown,
+          overviewMetrics: metrics.overviewMetrics,
+          questionMetrics: metrics.questionMetrics,
+          keyFindings: [],
+          recommendedActions: [],
+          dropoffSummary: metrics.dropoffSummary,
+          generatedAt: null,
+          clusters: [],
+        };
+      }
+
       return null;
     }
 
-    const clusters = await this.database.select().from(responseClusters).where(eq(responseClusters.insightSnapshotId, snapshot.id));
+    const clusters = await this.database
+      .select()
+      .from(responseClusters)
+      .where(eq(responseClusters.insightSnapshotId, snapshot.id));
 
     return {
       id: snapshot.id,
       formId: snapshot.formId,
-      status: snapshot.status,
+      status:
+        form.insightStatus === "processing" || form.insightStatus === "failed"
+          ? form.insightStatus
+          : snapshot.status,
       totalResponses: snapshot.totalResponses,
       sentimentBreakdown: snapshot.sentimentBreakdown,
       overviewMetrics: snapshot.overviewMetrics,
@@ -69,7 +90,10 @@ export class InsightRepository {
   }
 
   async calculateDeterministicMetrics(formId: string) {
-    const [responseCount] = await this.database.select({ count: count() }).from(formResponses).where(eq(formResponses.formId, formId));
+    const [responseCount] = await this.database
+      .select({ count: count() })
+      .from(formResponses)
+      .where(eq(formResponses.formId, formId));
     const sentimentRows = await this.database
       .select({ sentiment: responseAnalyses.sentiment, count: count() })
       .from(responseAnalyses)
@@ -90,9 +114,15 @@ export class InsightRepository {
       .from(responseAnswers)
       .innerJoin(formResponses, eq(formResponses.id, responseAnswers.responseId))
       .where(eq(formResponses.formId, formId))
-      .groupBy(responseAnswers.questionId, responseAnswers.questionText, responseAnswers.questionType);
+      .groupBy(
+        responseAnswers.questionId,
+        responseAnswers.questionText,
+        responseAnswers.questionType,
+      );
 
-    const sentimentBreakdown = Object.fromEntries(sentimentRows.map((row) => [row.sentiment, row.count]));
+    const sentimentBreakdown = Object.fromEntries(
+      sentimentRows.map((row) => [row.sentiment, row.count]),
+    );
     const dropoffSummary = Object.fromEntries(eventRows.map((row) => [row.eventType, row.count]));
 
     return {
@@ -166,7 +196,10 @@ export class InsightRepository {
         );
       }
 
-      await tx.update(forms).set({ insightStatus: "ready", updatedAt: new Date() }).where(eq(forms.id, input.formId));
+      await tx
+        .update(forms)
+        .set({ insightStatus: "ready", updatedAt: new Date() })
+        .where(eq(forms.id, input.formId));
       return snapshot;
     });
   }

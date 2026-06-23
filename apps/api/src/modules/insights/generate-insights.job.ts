@@ -28,6 +28,7 @@ export class GenerateInsightsJob {
           system: "You generate evidence-backed InsightForm findings. Avoid unsupported claims.",
           prompt: buildGenerateKeyFindingsPrompt({ metrics, analyses }),
           schema: insightAiOutputSchema,
+          schemaName: "insight_findings",
           modelProfile: "large",
         })
       : { keyFindings: [], recommendedActions: [] };
