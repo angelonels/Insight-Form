@@ -1,7 +1,7 @@
 import { AiModelConfig } from "../ai/ai-model-config.js";
 import { PromptVersions } from "../ai/ai-prompt-registry.js";
 import { LangChainBedrockChatGateway, type AiChatGateway } from "../ai/langchain-model-factory.js";
-import { runGenerateReportGraph } from "./graphs/generate-report.graph.js";
+import { generateReportContent } from "./generate-report-content.js";
 import { ReportRepository } from "./report.repository.js";
 
 export class GenerateReportJob {
@@ -13,7 +13,7 @@ export class GenerateReportJob {
   async execute(input: { reportId: string }) {
     const { report } = await this.reports.loadReportContext(input.reportId);
     const isExecutive = report.reportType === "executive_summary";
-    const output = await runGenerateReportGraph({
+    const output = await generateReportContent({
       reportId: input.reportId,
       reports: this.reports,
       ai: this.ai,
@@ -25,7 +25,9 @@ export class GenerateReportJob {
       contentMarkdown: output.contentMarkdown,
       modelProvider: AiModelConfig.provider,
       modelName: AiModelConfig.chatModelId("large"),
-      promptVersion: isExecutive ? PromptVersions.GenerateExecutiveSummaryReport : PromptVersions.GenerateFeedbackReport,
+      promptVersion: isExecutive
+        ? PromptVersions.GenerateExecutiveSummaryReport
+        : PromptVersions.GenerateFeedbackReport,
     });
   }
 }

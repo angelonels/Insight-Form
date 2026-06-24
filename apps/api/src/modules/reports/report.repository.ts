@@ -1,31 +1,24 @@
 import { and, desc, eq } from "drizzle-orm";
 
 import { db, type Database } from "../../shared/database/db.js";
-import { forms, insightSnapshots, reports, responseClusters } from "../../shared/database/schema/index.js";
-import { ConflictError, ForbiddenError, NotFoundError } from "../../shared/errors/app-error.js";
+import { insightSnapshots, reports, responseClusters } from "../../shared/database/schema/index.js";
+import { ConflictError, NotFoundError } from "../../shared/errors/app-error.js";
+import { FormOwnership } from "../forms/form-ownership.js";
 
 export class ReportRepository {
-  constructor(private readonly database: Database = db) {}
+  private readonly ownership: FormOwnership;
 
-  async ensureFormOwner(formId: string, ownerUserId: string) {
-    const [form] = await this.database.select().from(forms).where(eq(forms.id, formId)).limit(1);
-
-    if (!form) {
-      throw new NotFoundError({ code: "FORM_NOT_FOUND", message: "Form not found." });
-    }
-
-    if (form.ownerUserId !== ownerUserId) {
-      throw new ForbiddenError({
-        code: "FORM_ACCESS_DENIED",
-        message: "You do not have access to this form.",
-      });
-    }
-
-    return form;
+  constructor(private readonly database: Database = db) {
+    this.ownership = new FormOwnership(database);
   }
 
-  async createGenerating(input: { formId: string; ownerUserId: string; reportType: "executive_summary" | "feedback_report"; title?: string }) {
-    await this.ensureFormOwner(input.formId, input.ownerUserId);
+  async createGenerating(input: {
+    formId: string;
+    ownerUserId: string;
+    reportType: "executive_summary" | "feedback_report";
+    title?: string;
+  }) {
+    await this.ownership.requireOwner(input.formId, input.ownerUserId);
     const [latestInsight] = await this.database
       .select()
       .from(insightSnapshots)
@@ -47,24 +40,33 @@ export class ReportRepository {
         insightSnapshotId: latestInsight.id,
         reportType: input.reportType,
         status: "generating",
-        title: input.title ?? (input.reportType === "executive_summary" ? "Executive Summary" : "Feedback Report"),
+        title:
+          input.title ??
+          (input.reportType === "executive_summary" ? "Executive Summary" : "Feedback Report"),
       })
       .returning();
 
     if (!report) {
-      throw new ConflictError({ code: "REPORT_CREATE_FAILED", message: "Failed to create report." });
+      throw new ConflictError({
+        code: "REPORT_CREATE_FAILED",
+        message: "Failed to create report.",
+      });
     }
 
     return report;
   }
 
   async list(formId: string, ownerUserId: string) {
-    await this.ensureFormOwner(formId, ownerUserId);
-    return this.database.select().from(reports).where(eq(reports.formId, formId)).orderBy(desc(reports.createdAt));
+    await this.ownership.requireOwner(formId, ownerUserId);
+    return this.database
+      .select()
+      .from(reports)
+      .where(eq(reports.formId, formId))
+      .orderBy(desc(reports.createdAt));
   }
 
   async get(formId: string, ownerUserId: string, reportId: string) {
-    await this.ensureFormOwner(formId, ownerUserId);
+    await this.ownership.requireOwner(formId, ownerUserId);
     const [report] = await this.database
       .select()
       .from(reports)
@@ -78,7 +80,12 @@ export class ReportRepository {
     return report;
   }
 
-  async update(formId: string, ownerUserId: string, reportId: string, input: { title?: string; contentMarkdown?: string }) {
+  async update(
+    formId: string,
+    ownerUserId: string,
+    reportId: string,
+    input: { title?: string; contentMarkdown?: string },
+  ) {
     await this.get(formId, ownerUserId, reportId);
     const [report] = await this.database
       .update(reports)
@@ -90,28 +97,52 @@ export class ReportRepository {
 
   async markGenerating(formId: string, ownerUserId: string, reportId: string) {
     await this.get(formId, ownerUserId, reportId);
-    await this.database.update(reports).set({ status: "generating", updatedAt: new Date() }).where(eq(reports.id, reportId));
+    await this.database
+      .update(reports)
+      .set({ status: "generating", updatedAt: new Date() })
+      .where(eq(reports.id, reportId));
   }
 
   async loadReportContext(reportId: string) {
-    const [report] = await this.database.select().from(reports).where(eq(reports.id, reportId)).limit(1);
+    const [report] = await this.database
+      .select()
+      .from(reports)
+      .where(eq(reports.id, reportId))
+      .limit(1);
     if (!report) {
       throw new NotFoundError({ code: "REPORT_NOT_FOUND", message: "Report not found." });
     }
 
     const [insight] = report.insightSnapshotId
-      ? await this.database.select().from(insightSnapshots).where(eq(insightSnapshots.id, report.insightSnapshotId)).limit(1)
+      ? await this.database
+          .select()
+          .from(insightSnapshots)
+          .where(eq(insightSnapshots.id, report.insightSnapshotId))
+          .limit(1)
       : [];
 
     if (!insight || insight.status !== "ready") {
-      throw new ConflictError({ code: "INSIGHTS_NOT_READY", message: "Report requires a ready insight snapshot." });
+      throw new ConflictError({
+        code: "INSIGHTS_NOT_READY",
+        message: "Report requires a ready insight snapshot.",
+      });
     }
 
-    const clusters = await this.database.select().from(responseClusters).where(eq(responseClusters.insightSnapshotId, insight.id));
+    const clusters = await this.database
+      .select()
+      .from(responseClusters)
+      .where(eq(responseClusters.insightSnapshotId, insight.id));
     return { report, insight, clusters };
   }
 
-  async markReady(input: { reportId: string; title: string; contentMarkdown: string; modelProvider: string; modelName: string; promptVersion: string }) {
+  async markReady(input: {
+    reportId: string;
+    title: string;
+    contentMarkdown: string;
+    modelProvider: string;
+    modelName: string;
+    promptVersion: string;
+  }) {
     const [report] = await this.database
       .update(reports)
       .set({
