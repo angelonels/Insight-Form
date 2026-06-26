@@ -16,7 +16,7 @@ export type SyncCurrentUserInput = {
 };
 
 async function fetchClerkProfile(clerkUserId: string): Promise<Partial<SyncUserInput>> {
-  if (!env.CLERK_SECRET_KEY || env.NODE_ENV === "test") {
+  if (!env.CLERK_SECRET_KEY || env.NODE_ENV === "test" || (env.NODE_ENV === "development" && env.ENABLE_TEST_AUTH)) {
     return {};
   }
 

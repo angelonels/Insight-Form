@@ -45,11 +45,19 @@ export class EnsureDemoFormUseCase {
         });
       }
 
-      if (user.demoFormSeededAt) {
-        return { seeded: false as const };
-      }
-
       const seed = buildDemoHackathonSeed(input.userId);
+
+      if (user.demoFormSeededAt) {
+        const [existingDemoForm] = await tx
+          .select({ id: forms.id, publicSlug: forms.publicSlug })
+          .from(forms)
+          .where(eq(forms.publicSlug, seed.form.publicSlug))
+          .limit(1);
+
+        if (existingDemoForm) {
+          return { seeded: false as const, formId: existingDemoForm.id, publicSlug: existingDemoForm.publicSlug };
+        }
+      }
 
       await tx.insert(forms).values(seed.form);
       await tx.insert(formSections).values(seed.sections);

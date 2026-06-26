@@ -40,7 +40,7 @@ type DemoResponseProfile = {
 
 const DEMO_TITLE = "Hackathon Feedback Demo";
 const DEMO_DESCRIPTION =
-  "A realistic post-event feedback form showing published forms, submissions, analytics, insights, reports, quality checks, and Ask AI evidence.";
+  "A realistic post-event feedback form showing responses, insights, reports, and the public sharing flow.";
 const DEMO_BASE_DATE = Date.UTC(2026, 2, 15, 9, 0, 0);
 const DEMO_AI_MODEL = AiModelConfig.chatModelId("large");
 
@@ -865,7 +865,7 @@ export function buildDemoHackathonSeed(userId: string) {
           "# Feedback Report: Hackathon Feedback Demo",
           "",
           "## Response Overview",
-          "The published demo form has 100 completed responses, 100 analyses, analytics events for drop-off, and seeded evidence chunks for Ask AI.",
+          "The published demo form has 100 completed responses, completion activity, ready-made insights, and two report drafts.",
           "",
           "## Sentiment Summary",
           "Most responses are positive or mixed. Negative feedback is concentrated in logistics, workspace capacity, and schedule communication.",

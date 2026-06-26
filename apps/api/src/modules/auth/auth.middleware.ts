@@ -15,7 +15,8 @@ function readBearerToken(request: Request) {
 
 export async function requireAuth(request: Request, _response: Response, next: NextFunction) {
   try {
-    if (env.NODE_ENV === "test" && request.header("x-test-clerk-user-id")) {
+    const testAuthEnabled = env.NODE_ENV === "test" || (env.NODE_ENV === "development" && env.ENABLE_TEST_AUTH);
+    if (testAuthEnabled && request.header("x-test-clerk-user-id")) {
       request.auth = {
         clerkUserId: request.header("x-test-clerk-user-id")!,
         userId: request.header("x-test-user-id") ?? undefined,
