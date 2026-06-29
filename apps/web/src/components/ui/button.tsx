@@ -6,18 +6,18 @@ type ButtonVariant = "default" | "secondary" | "outline" | "ghost" | "link" | "d
 type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 const variantClasses: Record<ButtonVariant, string> = {
-  default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/92",
-  secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/82",
-  outline: "border border-border bg-background text-foreground hover:bg-muted",
-  ghost: "text-foreground hover:bg-muted",
+  default: "border border-primary bg-primary text-primary-foreground shadow-subtle hover:bg-primary/94",
+  secondary: "border border-secondary bg-secondary text-secondary-foreground hover:border-primary/15 hover:bg-secondary/72",
+  outline: "border border-border bg-raised text-foreground shadow-subtle hover:border-primary/35 hover:bg-secondary/35",
+  ghost: "text-muted-foreground hover:bg-muted hover:text-foreground",
   link: "h-auto p-0 text-primary underline-offset-4 hover:underline",
-  destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+  destructive: "border border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-9 px-3 text-sm",
+  sm: "h-8 px-3 text-sm",
   md: "h-10 px-4 text-sm",
-  lg: "h-12 px-5 text-base",
+  lg: "h-11 px-5 text-sm",
   icon: "size-10 p-0",
 };
 
@@ -31,8 +31,8 @@ export function buttonStyles({
   variant?: ButtonVariant;
 } = {}) {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+    "inline-flex shrink-0 items-center justify-center gap-2 rounded-md font-medium transition-[color,background-color,border-color,box-shadow,transform] duration-150 active:translate-y-px",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
     "disabled:pointer-events-none disabled:opacity-50",
     variantClasses[variant],
     sizeClasses[size],
@@ -41,11 +41,16 @@ export function buttonStyles({
 }
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  isLoading?: boolean;
   size?: ButtonSize;
   variant?: ButtonVariant;
 };
 
-export function Button({ className, size, variant, ...props }: ButtonProps) {
-  return <button className={buttonStyles({ className, size, variant })} {...props} />;
+export function Button({ children, className, disabled, isLoading, size, variant, ...props }: ButtonProps) {
+  return (
+    <button className={buttonStyles({ className, size, variant })} disabled={disabled || isLoading} {...props}>
+      {isLoading ? <span className="size-3 animate-pulse rounded-sm border border-current bg-current/15" aria-hidden="true" /> : null}
+      {children}
+    </button>
+  );
 }
-

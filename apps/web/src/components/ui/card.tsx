@@ -5,7 +5,7 @@ import { cn } from "../../lib/utils/cn.js";
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("rounded-lg border border-border bg-card text-card-foreground shadow-sm", className)}
+      className={cn("rounded-lg border border-border-subtle bg-card text-card-foreground shadow-subtle", className)}
       {...props}
     />
   );
@@ -19,3 +19,6 @@ export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivEleme
   return <div className={cn("p-5 pt-0", className)} {...props} />;
 }
 
+export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("flex items-center gap-3 p-5 pt-0", className)} {...props} />;
+}
