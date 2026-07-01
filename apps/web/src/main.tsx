@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import "@fontsource-variable/newsreader";
 
 import { AppProviders } from "./app/providers.js";
 import { AppRouter } from "./app/router.js";
@@ -12,4 +13,3 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </AppProviders>
   </React.StrictMode>,
 );
-

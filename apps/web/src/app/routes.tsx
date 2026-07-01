@@ -2,7 +2,14 @@ export const routes = {
   landing: "/",
   dashboard: "/app",
   aiFormCreation: "/app/forms/new/ai",
+  aiFormPreview: (generatedDraftId: string) => `/app/forms/new/ai/preview/${generatedDraftId}`,
   formEditor: (formId: string) => `/app/forms/${formId}/editor`,
+  ownerFormPreview: (formId: string) => `/app/forms/${formId}/preview`,
   publicForm: (publicSlug: string) => `/f/${publicSlug}`,
+  publicThankYou: (publicSlug: string) => `/f/${publicSlug}/thank-you`,
+  responses: (formId: string) => `/app/forms/${formId}/responses`,
+  responseDetail: (formId: string, responseId: string) => `/app/forms/${formId}/responses/${responseId}`,
+  insights: (formId: string) => `/app/forms/${formId}/insights`,
+  reports: (formId: string) => `/app/forms/${formId}/reports`,
+  reportDetail: (formId: string, reportId: string) => `/app/forms/${formId}/reports/${reportId}`,
 } as const;
-
