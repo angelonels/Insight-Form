@@ -195,7 +195,7 @@ databases:
     engine: PG
     production: false
   - name: redis
-    engine: REDIS
+    engine: VALKEY
     production: true
     cluster_name: insightform-redis
 
