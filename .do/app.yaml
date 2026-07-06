@@ -159,7 +159,7 @@ static_sites:
     git:
       repo_clone_url: https://github.com/angelonels/Insight-Form.git
       branch: main
-    build_command: pnpm --filter @insightform/web build
+    build_command: pnpm --filter @insightform/shared build && pnpm --filter @insightform/web build
     output_dir: apps/web/dist
     index_document: index.html
     catchall_document: index.html
