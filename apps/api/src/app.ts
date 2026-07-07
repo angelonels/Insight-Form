@@ -26,14 +26,28 @@ export function createApp() {
     });
   });
 
-  app.use("/api", createUserRouter());
-  app.use("/api", createAiFormAuthoringRouter());
-  app.use("/api/forms", createFormRouter());
-  app.use("/api/forms/:formId/analytics", createAnalyticsRouter());
-  app.use("/api/forms/:formId/insights", createInsightsRouter());
-  app.use("/api/forms/:formId/reports", createReportRouter());
-  app.use("/api/forms/:formId/responses", createResponseRouter());
-  app.use("/api/public/forms", createPublicFormRouter());
+  app.get("/", (_request, response) => {
+    response.status(200).json({
+      data: {
+        status: "ok",
+        service: "insightform-api",
+      },
+    });
+  });
+
+  const registerApiRoutes = (prefix: string) => {
+    app.use(prefix || "/", createUserRouter());
+    app.use(prefix || "/", createAiFormAuthoringRouter());
+    app.use(`${prefix}/forms`, createFormRouter());
+    app.use(`${prefix}/forms/:formId/analytics`, createAnalyticsRouter());
+    app.use(`${prefix}/forms/:formId/insights`, createInsightsRouter());
+    app.use(`${prefix}/forms/:formId/reports`, createReportRouter());
+    app.use(`${prefix}/forms/:formId/responses`, createResponseRouter());
+    app.use(`${prefix}/public/forms`, createPublicFormRouter());
+  };
+
+  registerApiRoutes("/api");
+  registerApiRoutes("");
 
   app.use((_request, response) => {
     response.status(404).json({
