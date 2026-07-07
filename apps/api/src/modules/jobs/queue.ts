@@ -25,6 +25,7 @@ export function getRedisConnectionOptions() {
     password: redisUrl.password || undefined,
     username: redisUrl.username || undefined,
     db: redisUrl.pathname.length > 1 ? Number(redisUrl.pathname.slice(1)) : undefined,
+    tls: redisUrl.protocol === "rediss:" ? {} : undefined,
     maxRetriesPerRequest: null,
   };
 }
