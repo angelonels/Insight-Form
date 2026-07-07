@@ -8,7 +8,7 @@ services:
       branch: main
     dockerfile_path: apps/api/Dockerfile
     http_port: 4000
-    instance_size_slug: apps-s-1vcpu-1gb
+    instance_size_slug: apps-s-1vcpu-0.5gb
     instance_count: 1
     health_check:
       http_path: /health
@@ -94,7 +94,7 @@ workers:
       branch: main
     dockerfile_path: apps/api/Dockerfile
     run_command: node apps/api/dist/modules/jobs/workers.js
-    instance_size_slug: apps-s-1vcpu-1gb
+    instance_size_slug: apps-s-1vcpu-0.5gb
     instance_count: 1
     envs:
       - key: NODE_ENV
@@ -182,7 +182,7 @@ jobs:
     environment_slug: node-js
     build_command: pnpm install --frozen-lockfile
     run_command: pnpm --filter @insightform/api db:migrate
-    instance_size_slug: apps-s-1vcpu-1gb
+    instance_size_slug: apps-s-1vcpu-0.5gb
     instance_count: 1
     envs:
       - key: DATABASE_URL
